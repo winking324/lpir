@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+    <file alias="icon.png">icon.png</file>
+    <file alias="screenshot.png">screenshot.png</file>
+    <file alias="time.png">time.png</file>
+    <file alias="price.png">price.png</file>
+    <file alias="enrollment.png">enrollment.png</file>
+    <file alias="select.png">select.png</file>
+</qresource>
+</RCC>
