@@ -6,5 +6,9 @@
     <file alias="price.png">price.png</file>
     <file alias="enrollment.png">enrollment.png</file>
     <file alias="select.png">select.png</file>
+    <file alias="check.png">check.png</file>
+    <file alias="uncheck.png">uncheck.png</file>
+    <file alias="select_rect.png">select_rect.png</file>
+    <file alias="select_point.png">select_point.png</file>
 </qresource>
 </RCC>

@@ -1,11 +1,13 @@
 #pragma once
+#include <map>
+#include <cinttypes>
 #include <QtGui>
 #include <QPoint>
 #include <QVBoxLayout>
 #include <QMainWindow>
 #include <QSystemTrayIcon>
 #include "system_tray_menu.h"
-#include "controller/screenshoter.h"
+#include "controller/event_handler.h"
 
 
 namespace lpir {
@@ -38,40 +40,24 @@ class MainWindow : public QMainWindow
  public slots:
   void UpdatePreferences();
 
-  void StartTimeScreenshot();
+  void OnSelectEvent(uint32_t event_type);
 
-  void StartPriceScreenshot();
+  void OnBidEvent(QString bid_str);
 
-  void StartEnrollmentScreenshot();
+  void OnOk();
 
-  void StartSelectPrice();
-
-  void StartSelectFare();
-
-  void StartSelectBid();
-
-  void StartSelectOk();
+  void OnTimeUpdate(uint32_t ts);
 
  private:
   void InitLogger();
 
  private:
-  bool is_shotting_;
-  bool is_selecting_;
-  uint32_t current_selecting_;
-  QPoint start_pos_;
-
-  QPoint select_pos_;
-
   MainMenuBar *menu_;
   MainToolBar *toolbar_;
   QSystemTrayIcon *tray_icon_;
   SystemTrayMenu  *tray_menu_;
   QVBoxLayout *layout_;
-
-  Screenshoter *time_shoter_;
-  Screenshoter *price_shoter_;
-  Screenshoter *enrollment_shoter_;
+  EventHandler *event_handler_;
 };
 
 

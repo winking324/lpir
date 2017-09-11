@@ -2,7 +2,6 @@
 #include "main_window.h"
 #include "main_menubar.h"
 #include "main_toolbar.h"
-#include "controller/keypress_simulater.h"
 #include "commons/definations.h"
 #include <log4cplus/log4cplus.h>
 #include <QIcon>
@@ -23,10 +22,6 @@ enum CurrentSelectingType {
 
 MainWindow::MainWindow(QWidget *parent)
   : QMainWindow(parent) {
-  is_shotting_ = false;
-  is_selecting_ = false;
-  current_selecting_ = SELECT_NONE;
-
   setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
   setAttribute(Qt::WA_TranslucentBackground);
 
@@ -43,28 +38,13 @@ MainWindow::MainWindow(QWidget *parent)
   addToolBar(toolbar_);
 
   InitLogger();
-  time_shoter_ = new Screenshoter(this);
-  price_shoter_ = new Screenshoter(this);
-  enrollment_shoter_ = new Screenshoter(this);
+  event_handler_ = new EventHandler(this);
 
-  if (!time_shoter_->InitTessApi()) {
-    LOG4CPLUS_ERROR_FMT(LOGGER_NAME, "Cannot init time tesseract api");
-  }
-  if (!price_shoter_->InitTessApi()) {
-    LOG4CPLUS_ERROR_FMT(LOGGER_NAME, "Cannot init price tesseract api");
-  }
-  if (!enrollment_shoter_->InitTessApi()) {
-    LOG4CPLUS_ERROR_FMT(LOGGER_NAME, "Cannot init enrollment tesseract api");
-  }
-
-  connect(toolbar_, SIGNAL(StartTimeScreenshot()), this, SLOT(StartTimeScreenshot()));
-  connect(toolbar_, SIGNAL(StartPriceScreenshot()), this, SLOT(StartPriceScreenshot()));
-  connect(toolbar_, SIGNAL(StartEnrollmentScreenshot()), this, SLOT(StartEnrollmentScreenshot()));
-
-  connect(toolbar_, SIGNAL(StartSelectPrice()), this, SLOT(StartSelectPrice()));
-  connect(toolbar_, SIGNAL(StartSelectFare()), this, SLOT(StartSelectFare()));
-  connect(toolbar_, SIGNAL(StartSelectBid()), this, SLOT(StartSelectBid()));
-  connect(toolbar_, SIGNAL(StartSelectOk()), this, SLOT(StartSelectOk()));
+  connect(toolbar_, SIGNAL(OnSelectEvent(uint32_t)), this, SLOT(OnSelectEvent(uint32_t)));
+  connect(toolbar_, SIGNAL(OnBidEvent(QString)), this, SLOT(OnBidEvent(QString)));
+  connect(toolbar_, SIGNAL(OnOk()), this, SLOT(OnOk()));
+  connect(event_handler_, SIGNAL(OnRepaintEvent()), this, SLOT(repaint()));
+  connect(event_handler_, SIGNAL(OnTimeUpdate(uint32_t)), this, SLOT(OnTimeUpdate(uint32_t)));
 }
 
 
@@ -75,140 +55,58 @@ MainWindow::~MainWindow() {
 void MainWindow::UpdatePreferences() {
 }
 
-void MainWindow::StartTimeScreenshot() {
-  LOG4CPLUS_INFO_STR(LOGGER_NAME, "start time screenshotting");
-  is_shotting_ = true;
-  is_selecting_ = false;
-  current_selecting_ = SELECT_TIME;
-  setCursor(Qt::CrossCursor);
+void MainWindow::OnSelectEvent(uint32_t event_type) {
+  if (event_handler_->OnSelectEvent(event_type)) {
+    if (event_type < SELECT_EVENT_PRICE_INPUT) {
+      setCursor(Qt::CrossCursor);
+    }
+  }
 }
 
-void MainWindow::StartPriceScreenshot() {
-  LOG4CPLUS_INFO_STR(LOGGER_NAME, "start price screenshotting");
-  is_shotting_ = true;
-  is_selecting_ = false;
-  current_selecting_ = SELECT_PRICE;
-  setCursor(Qt::CrossCursor);
+void MainWindow::OnBidEvent(QString bid_str) {
+  bool cvt_ret = false;
+  uint32_t bid = bid_str.toUInt(&cvt_ret);
+  if (!cvt_ret) return;
+
+  event_handler_->set_bid(bid);
 }
 
-void MainWindow::StartEnrollmentScreenshot() {
-  LOG4CPLUS_INFO_STR(LOGGER_NAME, "start enrollment screenshotting");
-  is_shotting_ = true;
-  is_selecting_ = false;
-  current_selecting_ = SELECT_ENROLLMENT;
-  setCursor(Qt::CrossCursor);
+void MainWindow::OnOk() {
+  event_handler_->OnOk();
 }
 
-void MainWindow::StartSelectPrice() {
-  is_shotting_ = false;
-  is_selecting_ = false;
-  current_selecting_ = SELECT_INPUT;
-}
-
-void MainWindow::StartSelectFare() {
-  is_shotting_ = false;
-  is_selecting_ = false;
-  current_selecting_ = SELECT_INPUT;
-}
-
-void MainWindow::StartSelectBid() {
-  is_shotting_ = false;
-  is_selecting_ = false;
-  current_selecting_ = SELECT_INPUT;
-}
-
-void MainWindow::StartSelectOk() {
-  is_shotting_ = false;
-  is_selecting_ = false;
-  current_selecting_ = SELECT_INPUT;
+void MainWindow::OnTimeUpdate(uint32_t ts) {
+  toolbar_->UpdateTime(ts);
 }
 
 void MainWindow::paintEvent(QPaintEvent *) {
-  if (is_shotting_ && is_selecting_) {
+  if (event_handler_->IsNeedPaint()) {
     QPainter window_painter(this);
     window_painter.setBrush(Qt::transparent);
 
     // Need to modify top pos, map from global to parent
-    QRect draw_rect = time_shoter_->SelectedRect();
+    QRect draw_rect = event_handler_->SelectedRect();
     draw_rect.setTopLeft(mapFromGlobal(draw_rect.topLeft()));
     window_painter.drawRect(draw_rect);
   }
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
-  if (!is_shotting_ && current_selecting_ == SELECT_NONE) return;
-
-  if (event->key() == Qt::Key_Escape) {
-    is_shotting_ = false;
-    is_selecting_ = false;
-    repaint();
-  }
-
-  if (event->key() == Qt::Key_Space) {
+  if (event_handler_->OnKeyPressEvent(event->key(), cursor().pos())) {
     setMouseTracking(true);
-    if (current_selecting_ == SELECT_INPUT) return;
-
-    if (is_selecting_) return;
-    is_selecting_ = true;
-
-    start_pos_ = cursor().pos();
-
-    LOG4CPLUS_INFO_FMT(LOGGER_NAME, "start screenshotting at: (%d, %d)",
-                       start_pos_.x(), start_pos_.y());
   }
 }
 
 void MainWindow::keyReleaseEvent(QKeyEvent *event) {
   setMouseTracking(false);
-  QPoint p = cursor().pos();
-  if (current_selecting_ == SELECT_INPUT) {
-    select_pos_ = cursor().pos();
-    KeypressSimulater s;
-    s.TestKeypress(select_pos_.x(), select_pos_.y());
-    return;
-  }
-
-  if (!is_shotting_) return;
-  if (!is_selecting_) return;
-
-  if (event->key() == Qt::Key_Space) {
-    is_shotting_ = false;
-    is_selecting_ = false;
+  if (event_handler_->OnKeyReleaseEvent(event->key(), cursor().pos())) {
     unsetCursor();
     repaint();
-
-    switch (current_selecting_) {
-      case SELECT_NONE:
-      break;
-      case SELECT_TIME:
-        time_shoter_->SetStartPos(start_pos_);
-        time_shoter_->SetEndPos(p);
-        time_shoter_->StartShot();
-      break;
-      case SELECT_PRICE:
-        price_shoter_->SetStartPos(start_pos_);
-        price_shoter_->SetEndPos(p);
-        price_shoter_->StartShot();
-      break;
-      case SELECT_ENROLLMENT:
-        enrollment_shoter_->SetStartPos(start_pos_);
-        enrollment_shoter_->SetEndPos(p);
-        enrollment_shoter_->StartShot();
-      break;
-      default:
-      break;
-    }
-    LOG4CPLUS_INFO_FMT(LOGGER_NAME, "stop screenshotting at: (%d, %d)",
-                       p.x(), p.y());
   }
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *) {
-  if (!is_shotting_) return;
-
-  if (is_selecting_) {
-    repaint();
-  }
+  event_handler_->OnMouseMoveEvent(cursor().pos());
 }
 
 void MainWindow::InitLogger() {

@@ -1,4 +1,5 @@
 #pragma once
+#include <QPoint>
 
 
 namespace lpir {
@@ -7,9 +8,11 @@ namespace lpir {
 class KeypressSimulater
 {
  public:
-  KeypressSimulater();
+  KeypressSimulater() = default;
 
-  void TestKeypress(int x, int y);
+  void InputAt(const std::string &input, const QPoint &pos);
+
+  void PressAt(const QPoint &pos);
 
  protected:
   void KeyPress(int key);

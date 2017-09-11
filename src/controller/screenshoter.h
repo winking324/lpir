@@ -3,7 +3,6 @@
 #include <QPoint>
 #include <QImage>
 #include <QPixmap>
-#include <QTimer>
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
 
@@ -28,10 +27,9 @@ class Screenshoter : public QObject
 
   void SetEndPos(const QPoint &pos);
 
-  void StartShot();
+  void ClearSelectedRect();
 
- protected slots:
-  void Shot();
+  std::string Shot();
 
  protected:
   std::string DigitalImageRecognition(const QPixmap &pixmap);
@@ -44,9 +42,7 @@ class Screenshoter : public QObject
   tesseract::TessBaseAPI *tess_api_;
   QPixmap shotted_pixmap_;
   QRect selected_rect_;
-  QTimer *shot_timer_;
 };
-
 
 }
 

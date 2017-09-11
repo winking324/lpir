@@ -27,7 +27,9 @@ QMAKE_CLEAN += $(TARGET) $(QMAKE_TARGET) bin/lpir
 # PART 4: Input
 SOURCES += \
     src/main.cpp \
-    src/controller/keypress_simulater.cpp
+    src/controller/event_handler.cpp
+SOURCES += \
+    src/model/price.cpp
 SOURCES += \
     src/view/main_window.cpp \
     src/view/about_dialog.cpp \
@@ -38,10 +40,14 @@ SOURCES += \
     src/view/system_tray_menu.cpp
 SOURCES += \
     src/controller/log_dock_appender.cpp \
+    src/controller/keypress_simulater.cpp \
     src/controller/screenshoter.cpp
+
 HEADERS  += \
     src/commons/definations.h \
-    src/controller/keypress_simulater.h
+    src/controller/event_handler.h
+HEADERS  += \
+    src/model/price.h
 HEADERS  += \
     src/view/main_window.h \
     src/view/about_dialog.h \
@@ -52,7 +58,10 @@ HEADERS  += \
     src/view/system_tray_menu.h
 HEADERS  += \
     src/controller/log_dock_appender.h \
+    src/controller/keypress_simulater.h \
     src/controller/screenshoter.h
+
 RESOURCES += \
     resource/resource.qrc
+
 ICON = icon.icns

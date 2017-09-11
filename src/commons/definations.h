@@ -19,4 +19,16 @@ const static std::string LOGGER_NAME("LPIR");
 const static std::string LOGGER_FORMAT("%d [%t] %-5p %c - %m%n");
 const static std::string LOGGER_FILE_PATH("/tmp/lpir.log");
 
+enum EventType {
+  SELECT_EVENT_NONE         = 0,
+  SELECT_EVENT_TIME         = 1,
+  SELECT_EVENT_PRICE        = 2,
+  SELECT_EVENT_ENROLLMENT   = 3,
+  SELECT_EVENT_PRICE_INPUT  = 4,
+  SELECT_EVENT_FARE         = 5,
+  SELECT_EVENT_BID          = 6,
+  SELECT_EVENT_OK           = 7,
+  SELECT_EVENT_CANCEL       = 8,
+};
+
 }

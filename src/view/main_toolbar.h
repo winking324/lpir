@@ -1,7 +1,11 @@
 #pragma once
-#include <QSize>
-#include <QPoint>
+#include <QList>
+#include <QLabel>
+#include <QAction>
 #include <QToolBar>
+#include <QLineEdit>
+#include <QPushButton>
+#include "commons/definations.h"
 
 
 namespace lpir {
@@ -16,20 +20,16 @@ class MainToolBar : public QToolBar
 
   ~MainToolBar();
 
+  void ChangeButtonState(uint32_t event_type, bool status);
+
+  void UpdateTime(uint32_t ts);
+
  signals:
-  void StartTimeScreenshot();
+  void OnSelectEvent(uint32_t event_type);
 
-  void StartPriceScreenshot();
+  void OnBidEvent(QString bid_str);
 
-  void StartEnrollmentScreenshot();
-
-  void StartSelectPrice();
-
-  void StartSelectFare();
-
-  void StartSelectBid();
-
-  void StartSelectOk();
+  void OnOk();
 
  private slots:
   void OnTimeScreenshot();
@@ -46,8 +46,24 @@ class MainToolBar : public QToolBar
 
   void OnSelectOk();
 
- private:
+  void OnSelectCancel();
 
+  void OnLockEvent();
+
+ private:
+  QAction *select_time_;
+  QAction *select_price_;
+  QAction *select_enrollment_;
+
+  QAction *select_price_input_;
+  QAction *select_fare_;
+  QAction *select_bid_;
+  QAction *select_ok_;
+  QAction *select_cancle_;
+
+  QLabel *time_label_;
+  QLineEdit *bid_edit_;
+  QPushButton *lock_bid_;
 };
 
 

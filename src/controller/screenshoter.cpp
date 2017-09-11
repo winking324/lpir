@@ -8,11 +8,8 @@
 
 using namespace lpir;
 
-
 Screenshoter::Screenshoter(QObject *parent)
   : QObject(parent) {
-  shot_timer_ = new QTimer(parent);
-  connect(shot_timer_, SIGNAL(timeout()), this, SLOT(Shot()));
 }
 
 Screenshoter::~Screenshoter() {
@@ -41,11 +38,17 @@ void Screenshoter::SetEndPos(const QPoint &pos) {
   selected_rect_.setBottomRight(pos);
 }
 
-void Screenshoter::StartShot() {
-  shot_timer_->start(300);
+void Screenshoter::ClearSelectedRect() {
+  selected_rect_ = QRect();
 }
 
-void Screenshoter::Shot() {
+std::string Screenshoter::Shot() {
+  if (selected_rect_.isNull() ||
+      selected_rect_.isEmpty() ||
+      !selected_rect_.isValid()) {
+    return "";
+  }
+
   clock_t start = clock();
   CGRect cg_selected_rect;
   cg_selected_rect.origin.x    = selected_rect_.x();
@@ -60,14 +63,15 @@ void Screenshoter::Shot() {
   shotted_pixmap_ = QtMac::fromCGImageRef(cg_window_image);
   CGImageRelease(cg_window_image);
   clock_t shot_end = clock();
-  LOG4CPLUS_INFO_FMT(LOGGER_NAME, "screenshot spend %f sec",
+  LOG4CPLUS_DEBUG_FMT(LOGGER_NAME, "screenshot spend %f sec",
                      static_cast<double>(shot_end - start) / CLOCKS_PER_SEC);
 
   std::string shot_str = DigitalImageRecognition(shotted_pixmap_);
   shot_str.erase(std::remove(shot_str.begin(), shot_str.end(), '\n'), shot_str.end());
-  LOG4CPLUS_INFO_FMT(LOGGER_NAME, "image recognition result: %s, spend %f sec",
+  LOG4CPLUS_DEBUG_FMT(LOGGER_NAME, "image recognition result: %s, spend %f sec",
                      shot_str.c_str(),
                      static_cast<double>(clock() - shot_end) / CLOCKS_PER_SEC);
+  return shot_str;
 }
 
 std::string Screenshoter::DigitalImageRecognition(const QPixmap &pixmap) {
